@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-
-import 'loginpage.dart';
-import 'halamanutama.dart';
+import 'loadingpage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,14 +19,14 @@ class TanamUangApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Tanam Uang',
-      home: const LoginPage(),
+      home: LoadingPage(),
 
-      localizationsDelegates: const [
+      localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('en', ''), Locale('id', '')],
+      supportedLocales: [Locale('en', ''), Locale('id', '')],
       // <--- AKHIR DARI BAGIAN LOKALISASI --->
     );
   }

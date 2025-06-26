@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/halamanutama.dart'; // Pastikan path ini benar
-// import 'package:google_sign_in/google_sign_in.dart'; // Uncomment jika sudah menambahkan paketnya
+import 'package:flutter_application_1/halamanutama.dart'; // Ensure this path is correct
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
-
-  // Untuk simulasi Google Sign-In
-  // GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']); // Uncomment jika menggunakan google_sign_in
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    return Container(
-      color: const Color.fromARGB(255, 255, 255, 255),
-      child: Stack(
+    // Define responsive values
+    // Adjust header height based on screen height, or set a minimum
+    final double headerHeight =
+        size.height * 0.22 < 180
+            ? 180
+            : size.height * 0.22; // Min 180, grows with height
+    final double panelTopOverlap =
+        headerHeight -
+        (size.height * 0.1); // Adjust overlap for better aesthetics
+    final double logoSize = size.width * 0.45; // Logo scales with screen width
+    final double verticalPadding =
+        size.height * 0.03; // Responsive vertical padding
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
         children: [
           // ====== Header Hitam Melengkung ======
           Positioned(
@@ -22,7 +31,7 @@ class LoginPage extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              height: 180,
+              height: headerHeight, // Use responsive header height
               decoration: const BoxDecoration(
                 color: Colors.black,
                 borderRadius: BorderRadius.only(
@@ -33,19 +42,15 @@ class LoginPage extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned(
-                    top: 50,
+                    top: size.height * 0.06, // Responsive top padding
                     left: 20,
                     child: GestureDetector(
-                      // Menggunakan GestureDetector agar bisa diklik
                       onTap: () {
-                        // Navigasi ke HomePage ketika Batalkan diklik
-                        // replace: true agar pengguna tidak bisa kembali ke halaman login dengan tombol back
+                        debugPrint('Batalkan clicked');
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder:
-                                (context) => const HomePage(
-                                  isLoggedIn: false,
-                                ), // isLogged = false
+                                (context) => const HomePage(isLoggedIn: false),
                           ),
                         );
                       },
@@ -56,19 +61,15 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 50,
+                    top: size.height * 0.06, // Responsive top padding
                     right: 20,
                     child: GestureDetector(
-                      // Menggunakan GestureDetector agar bisa diklik
                       onTap: () {
-                        // Aksi untuk tombol "Masuk"
-                        // Dalam kasus ini, kita bisa arahkan ke homepage juga
+                        debugPrint('Masuk clicked');
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder:
-                                (context) => const HomePage(
-                                  isLoggedIn: true,
-                                ), // isLogged = true
+                                (context) => const HomePage(isLoggedIn: true),
                           ),
                         );
                       },
@@ -87,172 +88,181 @@ class LoginPage extends StatelessWidget {
             ),
           ),
 
-          // ====== Panel Putih Tidak Full Width ======
-          Align(
-            alignment: Alignment.topCenter,
-            child: Container(
-              margin: const EdgeInsets.only(top: 100),
-              width: size.width * 0.88,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 30,
+          // ====== Panel Putih (Konten Utama) ======
+          // Use Positioned.fill to give clear height boundaries, then Align
+          Positioned.fill(
+            top: panelTopOverlap, // Adjusted overlap for better responsiveness
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24.0),
+                width: size.width * 0.88,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withAlpha((255 * 0.3).round()),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Logo
-                    Image.asset('assets/logo.png', width: 120, height: 120),
-                    const SizedBox(height: 30),
-
-                    // Judul
-                    const Text(
-                      'Tanam Uang',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600, // semi-bold
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: verticalPadding, // Responsive vertical padding
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo
+                      Image.asset(
+                        'assets/logo.png',
+                        width: logoSize, // Responsive logo size
+                        height: logoSize, // Responsive logo size
                       ),
-                    ),
-                    const Text(
-                      'Kecil Dicatat, Besar Terjaga',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.black54,
-                      ),
-                    ),
+                      SizedBox(
+                        height: size.height * 0.03,
+                      ), // Responsive spacing
 
-                    const SizedBox(height: 25),
-
-                    // Deskripsi
-                    const Text(
-                      'Setelah masuk, Anda dapat mencadangkan\n'
-                      'data Anda secara real time!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.black87,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Tombol Google
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        // --- Simulasi Google Sign-In ---
-                        // Dalam implementasi nyata, Anda akan melakukan hal seperti ini:
-                        // try {
-                        //   final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-                        //   if (googleUser != null) {
-                        //     print('User signed in: ${googleUser.displayName}');
-                        //     // Lanjutkan ke HomePage setelah login sukses
-                        //     Navigator.of(context).pushReplacement(
-                        //       MaterialPageRoute(
-                        //         builder: (context) => const HomePage(isLoggedIn: true),
-                        //       ),
-                        //     );
-                        //   } else {
-                        //     print('Google Sign-In cancelled or failed.');
-                        //   }
-                        // } catch (error) {
-                        //   print('Error during Google Sign-In: $error');
-                        //   // Tampilkan pesan error ke pengguna
-                        // }
-
-                        // Karena kita tidak mengintegrasikan backend sungguhan,
-                        // kita langsung navigasi ke HomePage sebagai simulasi login sukses.
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder:
-                                (context) => const HomePage(isLoggedIn: true),
-                          ),
-                        );
-                      },
-                      icon: Image.asset('assets/google_logo.png', height: 20),
-                      label: const Text(
-                        'Masuk Dengan Google',
+                      Text(
+                        'TumbuHara',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.normal,
+                          fontSize: size.width * 0.08, // Responsive font size
+                          fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEAEAEA),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 24,
+                      Text(
+                        'Kecil Dicatat, Besar Terjaga',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: size.width * 0.05, // Responsive font size
+                          fontWeight: FontWeight.normal,
+                          color: Colors.black54,
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(40),
+                      ),
+                      SizedBox(
+                        height: size.height * 0.025,
+                      ), // Responsive spacing
+                      // Deskripsi
+                      Text(
+                        'Setelah masuk, Anda dapat mencadangkan\ndata Anda secara real time!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: size.width * 0.035, // Responsive font size
+                          fontWeight: FontWeight.normal,
+                          color: Colors.black87,
                         ),
-                        elevation: 0,
                       ),
-                    ),
 
-                    const SizedBox(height: 30),
-
-                    // Disclaimer
-                    const Text(
-                      'Dengan masuk, Anda menyetujui Perjanjian Penggunaan\n'
-                      'dan Kebijakan Privasi',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w200, // extra light
-                        color: Colors.black54,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Syarat & Kebijakan
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          // Menggunakan GestureDetector agar bisa diklik
-                          onTap: () {
-                            // Aksi untuk Syarat Penggunaan
-                            // Misalnya, buka URL atau tampilkan dialog
-                            print('Syarat Penggunaan clicked');
-                          },
-                          child: const Text(
-                            'Syarat Penggunaan',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500, // medium
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
+                      SizedBox(
+                        height: size.height * 0.02,
+                      ), // Responsive spacing
+                      // Tombol Google
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const HomePage(isLoggedIn: true),
                             ),
+                          );
+                        },
+                        icon: Image.asset(
+                          'assets/google_logo.png',
+                          height: size.width * 0.05,
+                        ), // Responsive icon size
+                        label: Text(
+                          'Masuk Dengan Google',
+                          style: TextStyle(
+                            fontSize: size.width * 0.04, // Responsive font size
+                            fontWeight: FontWeight.normal,
+                            color: Colors.black,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          // Menggunakan GestureDetector agar bisa diklik
-                          onTap: () {
-                            // Aksi untuk Kebijakan Privasi
-                            print('Kebijakan Privasi clicked');
-                          },
-                          child: const Text(
-                            'Kebijakan Privasi',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.orange,
-                              decoration: TextDecoration.underline,
-                            ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEAEAEA),
+                          padding: EdgeInsets.symmetric(
+                            vertical:
+                                size.height *
+                                0.018, // Responsive vertical padding
+                            horizontal:
+                                size.width *
+                                0.06, // Responsive horizontal padding
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                          elevation: 0,
+                          minimumSize: Size(
+                            size.width * 0.7,
+                            size.height * 0.06, // Responsive button height
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+
+                      SizedBox(
+                        height: size.height * 0.03,
+                      ), // Responsive spacing
+                      // Disclaimer
+                      Text(
+                        'Dengan masuk, Anda menyetujui Perjanjian Penggunaan\ndan Kebijakan Privasi',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: size.width * 0.03, // Responsive font size
+                          fontWeight: FontWeight.w200,
+                          color: Colors.black54,
+                        ),
+                      ),
+
+                      SizedBox(
+                        height: size.height * 0.005,
+                      ), // Responsive spacing
+                      // Syarat & Kebijakan
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              debugPrint('Syarat Penggunaan clicked');
+                            },
+                            child: Text(
+                              'Syarat Penggunaan',
+                              style: TextStyle(
+                                fontSize:
+                                    size.width * 0.025, // Responsive font size
+                                fontWeight: FontWeight.w500,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: size.width * 0.025,
+                          ), // Responsive spacing
+                          GestureDetector(
+                            onTap: () {
+                              debugPrint('Kebijakan Privasi clicked');
+                            },
+                            child: Text(
+                              'Kebijakan Privasi',
+                              style: TextStyle(
+                                fontSize:
+                                    size.width * 0.025, // Responsive font size
+                                fontWeight: FontWeight.w500,
+                                color: Colors.orange,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: size.height * 0.01,
+                      ), // Responsive padding at bottom
+                    ],
+                  ),
                 ),
               ),
             ),

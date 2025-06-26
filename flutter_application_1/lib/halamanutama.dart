@@ -1,64 +1,17 @@
-// homepage.dart
+// lib/halamanutama.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart'; // Pastikan sudah ada di pubspec.yaml
-import 'edittransactionpage.dart'; // Import halaman tambah/edit
-import 'settingpage.dart'; // Import halaman pengaturan
-
-// --- MODEL DATA TRANSAKSI ---
-// Kelas ini harus berada di file yang sama atau di file terpisah yang diimport oleh kedua halaman
-// Contoh: bisa di `models/transaction.dart` lalu import di sini dan di add_edit_transaction_page.dart
-class Transaction {
-  final String id;
-  final String title;
-  final String subtitle;
-  final double amount;
-  final TransactionType type; // Pemasukan atau Pengeluaran
-  final DateTime date; // Tanggal transaksi
-  final TimeOfDay time; // Waktu transaksi
-
-  Transaction({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.amount,
-    required this.type,
-    required this.date,
-    required this.time,
-  });
-
-  // Helper untuk menggabungkan tanggal dan waktu menjadi DateTime lengkap
-  DateTime get fullDateTime =>
-      DateTime(date.year, date.month, date.day, time.hour, time.minute);
-
-  // Fungsi untuk membuat copy dari transaksi (berguna untuk edit)
-  Transaction copyWith({
-    String? id,
-    String? title,
-    String? subtitle,
-    double? amount,
-    TransactionType? type,
-    DateTime? date,
-    TimeOfDay? time,
-  }) {
-    return Transaction(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      subtitle: subtitle ?? this.subtitle,
-      amount: amount ?? this.amount,
-      type: type ?? this.type,
-      date: date ?? this.date,
-      time: time ?? this.time,
-    );
-  }
-}
-
-// Enum untuk tipe transaksi
-enum TransactionType { income, expense, transfer }
+import 'package:uuid/uuid.dart';
+import 'edittransactionpage.dart';
+import 'settingpage.dart';
+import 'riwayattransaksi.dart';
+import 'models/transaction_model.dart';
+import 'rekappage.dart';
+import 'hutangpage.dart';
 
 class HomePage extends StatefulWidget {
   final bool isLoggedIn;
-  final int initialTabIndex; // Untuk Bottom Navigation Bar
+  final int initialTabIndex;
 
   const HomePage({
     super.key,
@@ -71,28 +24,27 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0; // Index yang aktif di Bottom Navigation Bar
-  DateTime _selectedDate = DateTime.now(); // Tanggal yang sedang ditampilkan
-  List<Transaction> _transactions = []; // Daftar transaksi (data dummy)
-  final Uuid _uuid = const Uuid(); // Untuk menghasilkan ID unik
+  int _selectedIndex = 0;
+  DateTime _selectedDate = DateTime.now();
+  List<Transaction> _transactions = [];
+  final Uuid _uuid = const Uuid();
 
-  // State untuk FAB Speed Dial
   bool _isFabOpen = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialTabIndex; // Set indeks awal dari parameter
-    // Inisialisasi data transaksi contoh
+    _selectedIndex = widget.initialTabIndex;
     _transactions = [
       Transaction(
-        id: _uuid.v4(), // ID unik
+        id: _uuid.v4(),
         title: 'Gaji Bulanan',
-        subtitle: 'Income',
+        subtitle: 'Pekerjaan',
         amount: 1500000,
         type: TransactionType.income,
-        date: DateTime.now(),
+        date: DateTime.now().subtract(const Duration(days: 2)),
         time: const TimeOfDay(hour: 9, minute: 0),
+        notes: 'Gaji dari kantor bulan ini.',
       ),
       Transaction(
         id: _uuid.v4(),
@@ -102,6 +54,7 @@ class _HomePageState extends State<HomePage> {
         type: TransactionType.expense,
         date: DateTime.now(),
         time: const TimeOfDay(hour: 14, minute: 30),
+        notes: 'Kopi di Starbaks.',
       ),
       Transaction(
         id: _uuid.v4(),
@@ -109,65 +62,91 @@ class _HomePageState extends State<HomePage> {
         subtitle: 'Makanan',
         amount: 50000,
         type: TransactionType.expense,
-        date: DateTime.now().subtract(
-          const Duration(days: 1),
-        ), // Transaksi kemarin
+        date: DateTime.now().subtract(const Duration(days: 1)),
         time: const TimeOfDay(hour: 12, minute: 0),
+        notes: 'Nasi padang.',
+      ),
+      Transaction(
+        id: _uuid.v4(),
+        title: 'Transfer ke Rekening',
+        subtitle: 'Tabungan',
+        amount: 200000,
+        type: TransactionType.transfer,
+        date: DateTime.now().subtract(const Duration(days: 3)),
+        time: const TimeOfDay(hour: 10, minute: 0),
+        notes: 'Transfer ke rekening BNI pribadi.',
+      ),
+      Transaction(
+        id: _uuid.v4(),
+        title: 'Penjualan Barang',
+        subtitle: 'Bisnis',
+        amount: 75000,
+        type: TransactionType.income,
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        time: const TimeOfDay(hour: 16, minute: 0),
+        notes: 'Penjualan barang bekas di Tokopedia.',
       ),
     ];
-    // Pastikan transaksi diurutkan saat inisialisasi
     _transactions.sort((a, b) => b.fullDateTime.compareTo(a.fullDateTime));
   }
 
-  // Metode untuk menangani tap pada Bottom Navigation Bar
   void _onItemTapped(int index) {
+    if (index == _selectedIndex) {
+      return;
+    }
+
     setState(() {
       _selectedIndex = index;
     });
-    // Logika navigasi ke halaman yang berbeda
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) {
           switch (index) {
-            case 0: // Transaksi
-              return const HomePage(initialTabIndex: 0);
-            case 1: // Rekap (Placeholder)
-              // return const RekapPage(initialTabIndex: 1); // Jika Anda membuatnya nanti
-              return const HomePage(
+            case 0:
+              return HomePage(
+                initialTabIndex: 0,
+                isLoggedIn: widget.isLoggedIn,
+              );
+            case 1:
+              return RekapPage(
                 initialTabIndex: 1,
-              ); // Tetap di HomePage untuk saat ini
-            case 2: // Hutang (Placeholder)
-              // return const HutangPage(initialTabIndex: 2); // Jika Anda membuatnya nanti
-              return const HomePage(
+                isLoggedIn: widget.isLoggedIn,
+              );
+            case 2:
+              return HutangPage(
                 initialTabIndex: 2,
-              ); // Tetap di HomePage untuk saat ini
-            case 3: // Pengaturan
-              return const SettingsPage(initialTabIndex: 3);
+                isLoggedIn: widget.isLoggedIn,
+              );
+            case 3:
+              return SettingsPage(
+                initialTabIndex: 3,
+                isLoggedIn: widget.isLoggedIn,
+              );
             default:
-              return const HomePage(initialTabIndex: 0);
+              return HomePage(
+                initialTabIndex: 0,
+                isLoggedIn: widget.isLoggedIn,
+              );
           }
         },
       ),
     );
   }
 
-  // Fungsi untuk memilih tanggal dari kalender
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2000), // Batas awal
-      lastDate: DateTime(2030), // Batas akhir
-      locale: const Locale('id', 'ID'), // Untuk bahasa Indonesia
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2030),
+      locale: const Locale('id', 'ID'),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFFFF9800), // Warna header kalender
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFFF9800),
-            ), // Warna pilihan tanggal
+            primaryColor: const Color(0xFFFF9800),
+            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
             textButtonTheme: TextButtonThemeData(
-              // Untuk tombol 'OK', 'CANCEL'
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFFFF9800),
               ),
@@ -180,39 +159,29 @@ class _HomePageState extends State<HomePage> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _transactions.sort(
-          (a, b) => b.fullDateTime.compareTo(a.fullDateTime),
-        ); // Urutkan lagi
+        _transactions.sort((a, b) => b.fullDateTime.compareTo(a.fullDateTime));
       });
     }
   }
 
-  // Fungsi untuk navigasi ke tanggal sebelumnya
   void _goToPreviousDay() {
     setState(() {
       _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-      _transactions.sort(
-        (a, b) => b.fullDateTime.compareTo(a.fullDateTime),
-      ); // Urutkan lagi
+      _transactions.sort((a, b) => b.fullDateTime.compareTo(a.fullDateTime));
     });
   }
 
-  // Fungsi untuk navigasi ke tanggal sesudahnya
   void _goToNextDay() {
     setState(() {
       _selectedDate = _selectedDate.add(const Duration(days: 1));
-      _transactions.sort(
-        (a, b) => b.fullDateTime.compareTo(a.fullDateTime),
-      ); // Urutkan lagi
+      _transactions.sort((a, b) => b.fullDateTime.compareTo(a.fullDateTime));
     });
   }
 
-  // Fungsi untuk menghitung total pemasukan, pengeluaran, dan selisih
   Map<String, double> _calculateBalances() {
     double totalIncome = 0;
     double totalExpense = 0;
 
-    // Filter transaksi berdasarkan tanggal yang dipilih
     final dailyTransactions =
         _transactions
             .where(
@@ -237,38 +206,44 @@ class _HomePageState extends State<HomePage> {
     };
   }
 
-  // Fungsi untuk navigasi ke halaman Tambah/Edit Transaksi
   Future<void> _navigateToAddEditTransaction(
     TransactionType type, {
     Transaction? transactionToEdit,
   }) async {
-    final result = await Navigator.of(context).push(
+    final String title =
+        transactionToEdit == null ? 'Tambah Transaksi' : 'Edit Transaksi';
+
+    final dynamic result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder:
             (context) => AddEditTransactionPage(
               transactionType: type,
-              transaction:
-                  transactionToEdit, // Teruskan transaksi jika dalam mode edit
-              initialDate:
-                  _selectedDate, // Kirim tanggal saat ini sebagai initialDate
+              transaction: transactionToEdit,
+              initialDate: _selectedDate,
+              appBarTitle: title,
             ),
       ),
     );
 
-    // Jika hasil dari halaman AddEditTransactionPage adalah sebuah Transaksi
-    if (result != null && result is Transaction) {
+    if (!mounted) return;
+
+    if (result != null) {
       setState(() {
-        if (transactionToEdit == null) {
-          // Menambahkan transaksi baru
-          _transactions.add(result);
-        } else {
-          // Mengupdate transaksi yang sudah ada
-          int index = _transactions.indexWhere((t) => t.id == result.id);
-          if (index != -1) {
-            _transactions[index] = result;
+        if (result is Transaction) {
+          if (transactionToEdit == null) {
+            _transactions.add(result);
+          } else {
+            int index = _transactions.indexWhere((t) => t.id == result.id);
+            if (index != -1) {
+              _transactions[index] = result;
+            }
           }
+        } else if (result is String) {
+          _transactions.removeWhere((t) => t.id == result);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transaksi berhasil dihapus')),
+          );
         }
-        // Pastikan transaksi diurutkan ulang setelah penambahan/pengeditan
         _transactions.sort((a, b) => b.fullDateTime.compareTo(a.fullDateTime));
       });
     }
@@ -277,20 +252,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final balances = _calculateBalances();
-    // Formatter untuk mata uang Rupiah tanpa desimal
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
+    final formatter = NumberFormat.decimalPattern('id_ID');
 
-    // Format tanggal untuk tampilan AppBar
     String formattedDate = DateFormat(
       'EEE, dd MMM yyyy',
       'id_ID',
     ).format(_selectedDate);
 
-    // Filter transaksi untuk tanggal yang dipilih dan urutkan
     final transactionsForSelectedDate =
         _transactions
             .where(
@@ -302,19 +270,17 @@ class _HomePageState extends State<HomePage> {
             .toList();
     transactionsForSelectedDate.sort(
       (a, b) => b.fullDateTime.compareTo(a.fullDateTime),
-    ); // Urutkan terbaru di atas
+    );
 
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Warna background keseluruhan
+      backgroundColor: Colors.grey[100],
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100.0), // Tinggi AppBar
+        preferredSize: const Size.fromHeight(100.0),
         child: AppBar(
-          backgroundColor: const Color(0xFFFF9800), // Warna oranye
-          elevation: 0, // Tanpa shadow
+          backgroundColor: const Color(0xFFFF9800),
+          elevation: 0,
           shape: const ContinuousRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(50), // Bentuk melengkung di bawah
-            ),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(50)),
           ),
           flexibleSpace: Padding(
             padding: const EdgeInsets.only(top: 40.0, left: 16.0, right: 16.0),
@@ -329,17 +295,12 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                         size: 20,
                       ),
-                      onPressed:
-                          _goToPreviousDay, // Panggil fungsi navigasi sebelumnya
+                      onPressed: _goToPreviousDay,
                     ),
                     GestureDetector(
-                      // Tambahkan GestureDetector agar tanggal bisa diklik
-                      onTap:
-                          () => _selectDate(
-                            context,
-                          ), // Panggil fungsi pilih tanggal
+                      onTap: () => _selectDate(context),
                       child: Text(
-                        formattedDate, // Gunakan tanggal yang di-format
+                        formattedDate,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -353,23 +314,8 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                         size: 20,
                       ),
-                      onPressed:
-                          _goToNextDay, // Panggil fungsi navigasi selanjutnya
+                      onPressed: _goToNextDay,
                     ),
-                    // Ikon Download
-                    IconButton(
-                      icon: const Icon(
-                        Icons.download,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Download data...')),
-                        );
-                      },
-                    ),
-                    // Ikon Riwayat
                     IconButton(
                       icon: const Icon(
                         Icons.history,
@@ -377,11 +323,23 @@ class _HomePageState extends State<HomePage> {
                         size: 24,
                       ),
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Riwayat Transaksi akan datang!'),
-                          ),
-                        );
+                        Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => HistoryPage(
+                                      allTransactions: _transactions,
+                                    ),
+                              ),
+                            )
+                            .then((_) {
+                              setState(() {
+                                _transactions.sort(
+                                  (a, b) =>
+                                      b.fullDateTime.compareTo(a.fullDateTime),
+                                );
+                              });
+                            });
                       },
                     ),
                   ],
@@ -393,9 +351,8 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          // Panel Putih Pemasukan/Pengeluaran/Selisih
           Positioned(
-            top: 0, // Posisi relatif ke body
+            top: 0,
             left: 0,
             right: 0,
             child: Container(
@@ -406,7 +363,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withAlpha((255 * 0.2).round()),
                     spreadRadius: 2,
                     blurRadius: 5,
                     offset: const Offset(0, 3),
@@ -414,87 +371,79 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Column(
-                    children: [
-                      const Text(
-                        'Pemasukan',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        formatter.format(balances['income']),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green, // Warna hijau untuk pemasukan
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Pemasukan',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
-                      ),
-                    ],
-                  ),
-                  const VerticalDivider(
-                    color: Colors.grey,
-                    thickness: 1,
-                    width: 20,
-                    indent: 5,
-                    endIndent: 5,
-                  ),
-                  Column(
-                    children: [
-                      const Text(
-                        'Pengeluaran',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        formatter.format(balances['expense']),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red, // Warna merah untuk pengeluaran
+                        const SizedBox(height: 5),
+                        Text(
+                          '+${formatter.format(balances['income'])}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const VerticalDivider(
-                    color: Colors.grey,
-                    thickness: 1,
-                    width: 20,
-                    indent: 5,
-                    endIndent: 5,
-                  ),
-                  Column(
-                    children: [
-                      const Text(
-                        'Selisih',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        formatter.format(balances['balance']),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              balances['balance']! >= 0
-                                  ? Colors.black87
-                                  : Colors.red,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Pengeluaran',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 5),
+                        Text(
+                          formatter.format(balances['expense']),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Selisih',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          '${balances['balance']! >= 0 ? '+' : '-'}${formatter.format((balances['balance']!).abs())}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                balances['balance']! >= 0
+                                    ? Colors.black87
+                                    : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-
-          // Daftar Transaksi
           Positioned(
-            top: 140, // Sesuaikan dengan tinggi panel atas
+            top: 140,
             left: 0,
             right: 0,
-            bottom: 80, // Beri ruang untuk Bottom Navigation Bar
+            bottom: 80,
             child:
                 transactionsForSelectedDate.isEmpty
                     ? const Center(
@@ -519,7 +468,6 @@ class _HomePageState extends State<HomePage> {
                                 amountColor = Colors.red;
                                 sign = '-';
                               } else {
-                                // TransactionType.transfer
                                 amountColor = Colors.blue;
                                 sign = '';
                               }
@@ -541,18 +489,15 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      // --- FAB Speed Dial ---
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Pemasukan FAB
           AnimatedOpacity(
             opacity: _isFabOpen ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
             child: IgnorePointer(
-              // Mencegah klik saat tidak terlihat
               ignoring: !_isFabOpen,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -564,7 +509,7 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withAlpha((255 * 0.1).round()),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -580,30 +525,25 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(width: 8),
                   FloatingActionButton.small(
-                    heroTag: 'incomeFab', // Penting untuk unique heroTag
+                    heroTag: 'incomeFab',
                     onPressed: () {
                       setState(() {
-                        _isFabOpen = false; // Tutup FAB setelah dipilih
+                        _isFabOpen = false;
                       });
                       _navigateToAddEditTransaction(TransactionType.income);
                     },
-                    backgroundColor: Colors.green, // Warna hijau
-                    child: const Icon(
-                      Icons.attach_money,
-                      color: Colors.white,
-                    ), // Ikon uang
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.attach_money, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 10),
-          // Pengeluaran FAB
           AnimatedOpacity(
             opacity: _isFabOpen ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
             child: IgnorePointer(
-              // Mencegah klik saat tidak terlihat
               ignoring: !_isFabOpen,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -615,7 +555,7 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withAlpha((255 * 0.1).round()),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -631,30 +571,26 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(width: 8),
                   FloatingActionButton.small(
-                    heroTag: 'expenseFab', // Penting untuk unique heroTag
+                    heroTag: 'expenseFab',
                     onPressed: () {
                       setState(() {
-                        _isFabOpen = false; // Tutup FAB setelah dipilih
+                        _isFabOpen = false;
                       });
                       _navigateToAddEditTransaction(TransactionType.expense);
                     },
-                    backgroundColor: Colors.red, // Warna merah
-                    child: const Icon(
-                      Icons.shopping_cart,
-                      color: Colors.white,
-                    ), // Ikon keranjang
+                    backgroundColor: Colors.red,
+                    child: const Icon(Icons.shopping_cart, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 10),
-          // FAB Utama
           FloatingActionButton(
-            heroTag: 'mainFab', // Penting untuk unique heroTag
+            heroTag: 'mainFab',
             onPressed: () {
               setState(() {
-                _isFabOpen = !_isFabOpen; // Toggle buka/tutup FAB
+                _isFabOpen = !_isFabOpen;
               });
             },
             backgroundColor: const Color(0xFFFF9800),
@@ -667,9 +603,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      // --- END FAB Speed Dial ---
-
-      // Bottom Navigation Bar
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Transaksi'),
@@ -683,33 +616,25 @@ class _HomePageState extends State<HomePage> {
             label: 'Pengaturan',
           ),
         ],
-        currentIndex: _selectedIndex, // Indeks yang aktif
-        selectedItemColor: const Color(
-          0xFFFF9800,
-        ), // Warna oranye saat terpilih
-        unselectedItemColor: Colors.grey, // Warna abu-abu saat tidak terpilih
-        onTap: _onItemTapped, // Panggil metode navigasi
-        type: BottomNavigationBarType.fixed, // Penting agar semua item terlihat
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color(0xFFFF9800),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
       ),
     );
   }
 
-  // Widget pembantu untuk menampilkan setiap item transaksi
   Widget _buildTransactionItem({
     required Transaction transaction,
     required Color amountColor,
     required String sign,
-    required VoidCallback onEdit, // Callback untuk aksi edit
+    required VoidCallback onEdit,
   }) {
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    ); // Format tanpa desimal
+    final formatter = NumberFormat.decimalPattern('id_ID');
 
     return GestureDetector(
-      // GestureDetector agar item bisa diklik untuk edit
       onTap: onEdit,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -719,7 +644,7 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withAlpha((255 * 0.1).round()),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 2),
@@ -740,7 +665,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   Text(
-                    // Menampilkan waktu transaksi di bawah judul
                     '${transaction.subtitle} - ${transaction.time.format(context)}',
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
@@ -748,7 +672,11 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             Text(
-              '$sign${formatter.format(transaction.amount)}',
+              '${transaction.type == TransactionType.income
+                  ? '+'
+                  : transaction.type == TransactionType.expense
+                  ? '-'
+                  : ''}${formatter.format(transaction.amount)}',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
