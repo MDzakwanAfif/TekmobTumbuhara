@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/halamanutama.dart'; // Ensure this path is correct
+import 'package:flutter_application_1/halamanutama.dart'; // Sesuaikan nama project kamu
+import 'package:flutter_application_1/backend/auth_service.dart'; // Import AuthService
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -8,18 +9,10 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    // Define responsive values
-    // Adjust header height based on screen height, or set a minimum
-    final double headerHeight =
-        size.height * 0.22 < 180
-            ? 180
-            : size.height * 0.22; // Min 180, grows with height
-    final double panelTopOverlap =
-        headerHeight -
-        (size.height * 0.1); // Adjust overlap for better aesthetics
-    final double logoSize = size.width * 0.45; // Logo scales with screen width
-    final double verticalPadding =
-        size.height * 0.03; // Responsive vertical padding
+    final double headerHeight = size.height * 0.22 < 180 ? 180 : size.height * 0.22;
+    final double panelTopOverlap = headerHeight - (size.height * 0.1);
+    final double logoSize = size.width * 0.45;
+    final double verticalPadding = size.height * 0.03;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -31,7 +24,7 @@ class LoginPage extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              height: headerHeight, // Use responsive header height
+              height: headerHeight,
               decoration: const BoxDecoration(
                 color: Colors.black,
                 borderRadius: BorderRadius.only(
@@ -42,15 +35,14 @@ class LoginPage extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned(
-                    top: size.height * 0.06, // Responsive top padding
+                    top: size.height * 0.06,
                     left: 20,
                     child: GestureDetector(
                       onTap: () {
                         debugPrint('Batalkan clicked');
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
-                            builder:
-                                (context) => const HomePage(isLoggedIn: false),
+                            builder: (context) => const HomePage(isLoggedIn: false),
                           ),
                         );
                       },
@@ -61,15 +53,14 @@ class LoginPage extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: size.height * 0.06, // Responsive top padding
+                    top: size.height * 0.06,
                     right: 20,
                     child: GestureDetector(
                       onTap: () {
                         debugPrint('Masuk clicked');
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
-                            builder:
-                                (context) => const HomePage(isLoggedIn: true),
+                            builder: (context) => const HomePage(isLoggedIn: true),
                           ),
                         );
                       },
@@ -89,9 +80,8 @@ class LoginPage extends StatelessWidget {
           ),
 
           // ====== Panel Putih (Konten Utama) ======
-          // Use Positioned.fill to give clear height boundaries, then Align
           Positioned.fill(
-            top: panelTopOverlap, // Adjusted overlap for better responsiveness
+            top: panelTopOverlap,
             child: Align(
               alignment: Alignment.topCenter,
               child: Container(
@@ -112,7 +102,7 @@ class LoginPage extends StatelessWidget {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                     horizontal: 24.0,
-                    vertical: verticalPadding, // Responsive vertical padding
+                    vertical: verticalPadding,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -120,17 +110,14 @@ class LoginPage extends StatelessWidget {
                       // Logo
                       Image.asset(
                         'assets/logo.png',
-                        width: logoSize, // Responsive logo size
-                        height: logoSize, // Responsive logo size
+                        width: logoSize,
+                        height: logoSize,
                       ),
-                      SizedBox(
-                        height: size.height * 0.03,
-                      ), // Responsive spacing
-
+                      SizedBox(height: size.height * 0.03),
                       Text(
                         'TumbuHara',
                         style: TextStyle(
-                          fontSize: size.width * 0.08, // Responsive font size
+                          fontSize: size.width * 0.08,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
@@ -139,46 +126,49 @@ class LoginPage extends StatelessWidget {
                         'Kecil Dicatat, Besar Terjaga',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: size.width * 0.05, // Responsive font size
+                          fontSize: size.width * 0.05,
                           fontWeight: FontWeight.normal,
                           color: Colors.black54,
                         ),
                       ),
-                      SizedBox(
-                        height: size.height * 0.025,
-                      ), // Responsive spacing
-                      // Deskripsi
+                      SizedBox(height: size.height * 0.025),
                       Text(
-                        'Setelah masuk, Anda dapat mencadangkan\ndata Anda secara real time!',
+                        'Setelah masuk, Anda dapat mencadangkan data Anda secara real time!',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: size.width * 0.035, // Responsive font size
+                          fontSize: size.width * 0.035,
                           fontWeight: FontWeight.normal,
                           color: Colors.black87,
                         ),
                       ),
+                      SizedBox(height: size.height * 0.02),
 
-                      SizedBox(
-                        height: size.height * 0.02,
-                      ), // Responsive spacing
-                      // Tombol Google
+                      // Tombol Login Google
                       ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => const HomePage(isLoggedIn: true),
-                            ),
-                          );
+                        onPressed: () async {
+                          final userCredential = await AuthService().signInWithGoogle();
+                          if (userCredential != null) {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => const HomePage(isLoggedIn: true),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Login dengan Google dibatalkan atau gagal."),
+                              ),
+                            );
+                          }
                         },
                         icon: Image.asset(
                           'assets/google_logo.png',
                           height: size.width * 0.05,
-                        ), // Responsive icon size
+                        ),
                         label: Text(
                           'Masuk Dengan Google',
                           style: TextStyle(
-                            fontSize: size.width * 0.04, // Responsive font size
+                            fontSize: size.width * 0.04,
                             fontWeight: FontWeight.normal,
                             color: Colors.black,
                           ),
@@ -186,12 +176,8 @@ class LoginPage extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFEAEAEA),
                           padding: EdgeInsets.symmetric(
-                            vertical:
-                                size.height *
-                                0.018, // Responsive vertical padding
-                            horizontal:
-                                size.width *
-                                0.06, // Responsive horizontal padding
+                            vertical: size.height * 0.018,
+                            horizontal: size.width * 0.06,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(40),
@@ -199,29 +185,22 @@ class LoginPage extends StatelessWidget {
                           elevation: 0,
                           minimumSize: Size(
                             size.width * 0.7,
-                            size.height * 0.06, // Responsive button height
+                            size.height * 0.06,
                           ),
                         ),
                       ),
 
-                      SizedBox(
-                        height: size.height * 0.03,
-                      ), // Responsive spacing
-                      // Disclaimer
+                      SizedBox(height: size.height * 0.03),
                       Text(
-                        'Dengan masuk, Anda menyetujui Perjanjian Penggunaan\ndan Kebijakan Privasi',
+                        'Dengan masuk, Anda menyetujui Perjanjian Penggunaan dan Kebijakan Privasi',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: size.width * 0.03, // Responsive font size
+                          fontSize: size.width * 0.03,
                           fontWeight: FontWeight.w200,
                           color: Colors.black54,
                         ),
                       ),
-
-                      SizedBox(
-                        height: size.height * 0.005,
-                      ), // Responsive spacing
-                      // Syarat & Kebijakan
+                      SizedBox(height: size.height * 0.005),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -232,16 +211,13 @@ class LoginPage extends StatelessWidget {
                             child: Text(
                               'Syarat Penggunaan',
                               style: TextStyle(
-                                fontSize:
-                                    size.width * 0.025, // Responsive font size
+                                fontSize: size.width * 0.025,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.blue,
                               ),
                             ),
                           ),
-                          SizedBox(
-                            width: size.width * 0.025,
-                          ), // Responsive spacing
+                          SizedBox(width: size.width * 0.025),
                           GestureDetector(
                             onTap: () {
                               debugPrint('Kebijakan Privasi clicked');
@@ -249,8 +225,7 @@ class LoginPage extends StatelessWidget {
                             child: Text(
                               'Kebijakan Privasi',
                               style: TextStyle(
-                                fontSize:
-                                    size.width * 0.025, // Responsive font size
+                                fontSize: size.width * 0.025,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.orange,
                               ),
@@ -258,9 +233,7 @@ class LoginPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      SizedBox(
-                        height: size.height * 0.01,
-                      ), // Responsive padding at bottom
+                      SizedBox(height: size.height * 0.01),
                     ],
                   ),
                 ),

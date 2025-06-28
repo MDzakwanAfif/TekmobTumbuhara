@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "846522112191",
+    "project_id": "tekmob-66ff6",
+    "storage_bucket": "tekmob-66ff6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846522112191:android:c38d5f6e3243e1d4374e0a",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "846522112191-9o6elkvgq3bak77pgmov9a7utsdmca66.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flutter_application_1",
+            "certificate_hash": "cee1deec9d6f6d8e80e00e2714af121406fa045e"
+          }
+        },
+        {
+          "client_id": "846522112191-87emr66smn40ivdqau4r1plnivqqo13o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDS3ag10hEjTRK-_DL5Rk3TbhS1MiMV9Pg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "846522112191-87emr66smn40ivdqau4r1plnivqqo13o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "846522112191-r59152ihpf2ld3kqn34u2pufc1ind0o3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterApplication1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

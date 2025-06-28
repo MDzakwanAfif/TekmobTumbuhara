@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_application_1/models/transaction_model.dart';
-// import 'package:uuid/uuid.dart'; // Tidak perlu uuid di sini jika hanya menampilkan
+import 'edittransactionpage.dart';
 
 class HistoryPage extends StatefulWidget {
   final List<Transaction>
@@ -285,51 +285,79 @@ class _HistoryPageState extends State<HistoryPage> {
     required String sign,
     required NumberFormat formatter,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((255 * 0.1).round()),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
+    return InkWell(
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (_) => AddEditTransactionPage(
+                  transactionType: transaction.type,
+                  transaction: transaction,
+                  initialDate: transaction.date,
+                  appBarTitle: 'Edit Transaksi',
+                ),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+        );
+
+        if (result != null && result is Transaction) {
+          setState(() {
+            final index = widget.allTransactions.indexWhere(
+              (t) => t.id == result.id,
+            );
+            if (index != -1) {
+              widget.allTransactions[index] = result;
+              _applyFilter();
+            }
+          });
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withAlpha((255 * 0.1).round()),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  transaction.subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+                  Text(
+                    transaction.subtitle,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            '$sign${formatter.format(transaction.amount)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: amountColor,
+            Text(
+              '$sign${formatter.format(transaction.amount)}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: amountColor,
+              ),
             ),
-          ),
-          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        ],
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
       ),
     );
   }

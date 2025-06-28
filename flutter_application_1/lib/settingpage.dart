@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/halamanutama.dart';
 import 'package:flutter_application_1/rekappage.dart';
 import 'package:flutter_application_1/hutangpage.dart';
+import 'package:flutter_application_1/loginpage.dart';
+import 'package:flutter_application_1/backend/auth_service.dart';
 
 enum AppTheme { orange, blue, green }
 
@@ -21,6 +24,18 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   AppTheme _currentTheme = AppTheme.orange;
+  late bool _isLoggedIn;
+  late String _userName = "Pengguna Aktif";
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    _isLoggedIn = user != null;
+    if (_isLoggedIn) {
+      _userName = user?.displayName ?? "Pengguna Aktif";
+    }
+  }
 
   Color get mainColor {
     switch (_currentTheme) {
@@ -31,6 +46,42 @@ class _SettingsPageState extends State<SettingsPage> {
       case AppTheme.green:
         return Colors.green;
     }
+  }
+
+  void _handleLoginButton() async {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+
+  void _handleLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Keluar'),
+        content: const Text('Yakin ingin logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await AuthService().signOut();
+
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+              );
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -54,21 +105,23 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           ListTile(
             leading: const CircleAvatar(radius: 24, child: Icon(Icons.person)),
-            title: Text(widget.isLoggedIn ? 'Pengguna Aktif' : 'Masuk'),
+            title: Text(_isLoggedIn ? _userName : 'Masuk'),
             subtitle: Text(
-              widget.isLoggedIn ? 'Anda sudah login' : 'Masuk, lebih seru!',
+              _isLoggedIn ? 'Anda sudah login' : 'Masuk, lebih seru!',
             ),
             trailing: ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Fitur masuk belum diatur")),
-                );
+                if (_isLoggedIn) {
+                  _handleLogout();
+                } else {
+                  _handleLoginButton();
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: mainColor,
                 foregroundColor: Colors.white,
               ),
-              child: Text(widget.isLoggedIn ? 'Profil' : 'Masuk'),
+              child: Text(_isLoggedIn ? 'Logout' : 'Masuk'),
             ),
           ),
           const Divider(),
@@ -99,22 +152,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 label: const Text('Orange'),
                 selected: _currentTheme == AppTheme.orange,
                 selectedColor: Colors.orange[100],
-                onSelected:
-                    (_) => setState(() => _currentTheme = AppTheme.orange),
+                onSelected: (_) => setState(() => _currentTheme = AppTheme.orange),
               ),
               ChoiceChip(
                 label: const Text('Biru'),
                 selected: _currentTheme == AppTheme.blue,
                 selectedColor: Colors.blue[100],
-                onSelected:
-                    (_) => setState(() => _currentTheme = AppTheme.blue),
+                onSelected: (_) => setState(() => _currentTheme = AppTheme.blue),
               ),
               ChoiceChip(
                 label: const Text('Hijau'),
                 selected: _currentTheme == AppTheme.green,
                 selectedColor: Colors.green[100],
-                onSelected:
-                    (_) => setState(() => _currentTheme = AppTheme.green),
+                onSelected: (_) => setState(() => _currentTheme = AppTheme.green),
               ),
             ],
           ),
@@ -124,14 +174,8 @@ class _SettingsPageState extends State<SettingsPage> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.paid), label: 'Transaksi'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Rekap'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Hutang',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Pengaturan',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Hutang'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Pengaturan'),
         ],
         currentIndex: widget.initialTabIndex,
         selectedItemColor: mainColor,
@@ -144,25 +188,13 @@ class _SettingsPageState extends State<SettingsPage> {
               builder: (context) {
                 switch (index) {
                   case 0:
-                    return HomePage(
-                      isLoggedIn: widget.isLoggedIn,
-                      initialTabIndex: 0,
-                    );
+                    return HomePage(initialTabIndex: 0);
                   case 1:
-                    return RekapPage(
-                      isLoggedIn: widget.isLoggedIn,
-                      initialTabIndex: 1,
-                    );
+                    return RekapPage(initialTabIndex: 1);
                   case 2:
-                    return HutangPage(
-                      isLoggedIn: widget.isLoggedIn,
-                      initialTabIndex: 2,
-                    );
+                    return HutangPage(initialTabIndex: 2);
                   default:
-                    return SettingsPage(
-                      isLoggedIn: widget.isLoggedIn,
-                      initialTabIndex: 3,
-                    );
+                    return SettingsPage(initialTabIndex: 3);
                 }
               },
             ),

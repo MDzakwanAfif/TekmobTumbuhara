@@ -2,10 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import 'package:flutter_application_1/halamanutama.dart';
-import 'package:flutter_application_1/rekappage.dart';
-import 'package:flutter_application_1/hutangpage.dart';
-import 'package:flutter_application_1/settingpage.dart';
+import '/widgets/kalkulator.dart'; // kalkulator kustom
 
 // Enum dan Model DebtTransaction (pastikan ini ada di satu lokasi yang diimpor)
 enum DebtTransactionType { giving, receiving }
@@ -58,7 +55,7 @@ class AddEditHutangPage extends StatefulWidget {
   final DebtTransaction? transaction;
   final DateTime initialDate;
   final int initialTabIndex;
-  final bool isLoggedIn; // ✅ Tambahkan ini
+  final bool isLoggedIn;
 
   const AddEditHutangPage({
     super.key,
@@ -66,7 +63,7 @@ class AddEditHutangPage extends StatefulWidget {
     this.transaction,
     required this.initialDate,
     this.initialTabIndex = 2,
-    required this.isLoggedIn, // ✅ Tambahkan ini
+    required this.isLoggedIn,
   });
 
   @override
@@ -161,6 +158,22 @@ class _AddEditHutangPageState extends State<AddEditHutangPage> {
         _selectedTime = picked;
       });
     }
+  }
+
+  void _showCalculator() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => CustomCalculator(
+              onSubmit: (result) {
+                setState(() {
+                  _amountController.text = result;
+                });
+              },
+            ),
+      ),
+    );
   }
 
   void _saveDebtTransaction() {
@@ -268,11 +281,14 @@ class _AddEditHutangPageState extends State<AddEditHutangPage> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Jumlah',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   prefixText: 'Rp ',
-                  suffixIcon: Icon(Icons.calculate),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calculate),
+                    onPressed: _showCalculator,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {

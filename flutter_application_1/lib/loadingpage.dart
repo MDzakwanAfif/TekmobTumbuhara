@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/loginpage.dart';
+import 'package:flutter_application_1/halamanutama.dart';
 
 class LoadingPage extends StatefulWidget {
   const LoadingPage({super.key});
@@ -12,41 +14,49 @@ class _LoadingPageState extends State<LoadingPage> {
   @override
   void initState() {
     super.initState();
-
     _initializeApp();
   }
 
   Future<void> _initializeApp() async {
-    await Future.delayed(
-      const Duration(seconds: 3),
-    ); // Simulasi loading selama 3 detik
+    await Future.delayed(const Duration(seconds: 2)); // Opsional: animasi delay
 
-    // Setelah proses loading selesai, navigasi ke halaman berikutnya
+    final user = FirebaseAuth.instance.currentUser;
+
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+    if (user != null) {
+      // User sudah login
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const HomePage(isLoggedIn: true),
+        ),
+      );
+    } else {
+      // User belum login
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/logo.png', width: 250, height: 250),
-            const SizedBox(height: 30),
-            // Opsional: Anda bisa menambahkan teks lain seperti 'Memuat...' di bawah 'Catat Uang'
-            // const Text(
-            //   'Memuat...',
-            //   style: TextStyle(
-            //     fontSize: 16,
-            //     color: Colors.black54,
-            //   ),
-            // ),
+            // Logo + Loading Indicator
+            Image(
+              image: AssetImage('assets/logo.png'),
+              width: 200,
+              height: 200,
+            ),
+            SizedBox(height: 30),
+            CircularProgressIndicator(color: Colors.orange),
           ],
         ),
       ),

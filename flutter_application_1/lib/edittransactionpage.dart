@@ -1,15 +1,15 @@
-// lib/add_edit_transaction_page.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_application_1/models/transaction_model.dart';
-import 'halamanutama.dart'; // Import HomePage untuk navigasi BottomNavBar
+import 'halamanutama.dart';
+import '/widgets/kalkulator.dart';
 
 class AddEditTransactionPage extends StatefulWidget {
   final TransactionType transactionType;
-  final Transaction? transaction; // Jika ada, berarti mode edit
-  final DateTime initialDate; // Tanggal awal dari HomePage
-  final String appBarTitle; // Properti untuk judul AppBar
+  final Transaction? transaction;
+  final DateTime initialDate;
+  final String appBarTitle;
 
   const AddEditTransactionPage({
     super.key,
@@ -27,8 +27,8 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _amountController;
-  late TextEditingController _categoryController; // Untuk subtitle
-  late TextEditingController _notesController; // Untuk notes tambahan
+  late TextEditingController _categoryController;
+  late TextEditingController _notesController;
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late TransactionType _currentTransactionType;
@@ -66,7 +66,6 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
     super.dispose();
   }
 
-  // --- Fungsi Pilih Tanggal ---
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -74,56 +73,26 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2030),
       locale: const Locale('id', 'ID'),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFFFF9800),
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF9800),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
       setState(() {
         _selectedDate = picked;
       });
     }
   }
 
-  // --- Fungsi Pilih Waktu ---
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFFFF9800),
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF9800),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-    if (picked != null && picked != _selectedTime) {
+    if (picked != null) {
       setState(() {
         _selectedTime = picked;
       });
     }
   }
 
-  // --- Fungsi Simpan Transaksi ---
   void _saveTransaction() {
     if (_formKey.currentState!.validate()) {
       final String id = widget.transaction?.id ?? _uuid.v4();
@@ -149,12 +118,10 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
         notes: notes,
       );
 
-      // Kembali ke halaman sebelumnya dengan data transaksi yang disimpan
       Navigator.of(context).pop(newTransaction);
     }
   }
 
-  // --- Fungsi Hapus Transaksi ---
   Future<void> _deleteTransaction() async {
     final bool? confirmDelete = await showDialog<bool>(
       context: context,
@@ -166,12 +133,11 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
           ),
           actions: <Widget>[
             TextButton(
-              onPressed:
-                  () => Navigator.of(context).pop(false), // Tidak jadi hapus
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true), // Ya, hapus
+              onPressed: () => Navigator.of(context).pop(true),
               child: const Text('Hapus', style: TextStyle(color: Colors.red)),
             ),
           ],
@@ -181,17 +147,28 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
 
     if (!mounted) return;
     if (confirmDelete == true) {
-      // Kembali ke halaman sebelumnya dengan ID transaksi yang akan dihapus
-      // atau sinyal khusus lainnya (misalnya String 'delete_transaction_ID')
-      Navigator.of(
-        context,
-      ).pop(widget.transaction?.id); // Mengirimkan ID transaksi yang dihapus
+      Navigator.of(context).pop(widget.transaction?.id);
     }
+  }
+
+  void _openCalculator() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => CustomCalculator(
+              onSubmit: (value) {
+                setState(() {
+                  _amountController.text = value;
+                });
+              },
+            ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Tombol delete hanya muncul jika ini mode edit (yaitu, widget.transaction tidak null)
     final bool isEditing = widget.transaction != null;
 
     return Scaffold(
@@ -201,15 +178,13 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed:
-              () => Navigator.of(context).pop(), // Kembali tanpa perubahan
+          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          // Tombol Delete (hanya tampil jika dalam mode edit)
           if (isEditing)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: _deleteTransaction, // Panggil fungsi delete
+              onPressed: _deleteTransaction,
             ),
         ],
       ),
@@ -220,32 +195,24 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Toggle Pengeluaran / Pemasukan
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap:
+                          () => setState(() {
                             _currentTransactionType = TransactionType.expense;
-                          });
-                        },
-                        child: Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color:
-                                _currentTransactionType ==
-                                        TransactionType.expense
-                                    ? const Color(0xFFFF9800)
-                                    : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          }),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color:
+                              _currentTransactionType == TransactionType.expense
+                                  ? const Color(0xFFFF9800)
+                                  : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
                           child: Text(
                             'Pengeluaran',
                             style: TextStyle(
@@ -260,24 +227,24 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap:
+                          () => setState(() {
                             _currentTransactionType = TransactionType.income;
-                          });
-                        },
-                        child: Container(
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color:
-                                _currentTransactionType ==
-                                        TransactionType.income
-                                    ? const Color(0xFFFF9800)
-                                    : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          }),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color:
+                              _currentTransactionType == TransactionType.income
+                                  ? const Color(0xFFFF9800)
+                                  : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
                           child: Text(
                             'Pemasukan',
                             style: TextStyle(
@@ -292,12 +259,11 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
 
-              // Judul Transaksi (misalnya 'Beli Kopi', 'Gaji Bulanan')
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -306,16 +272,13 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
                   suffixIcon: Icon(Icons.description),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.isEmpty)
                     return 'Judul tidak boleh kosong';
-                  }
                   return null;
                 },
-                style: const TextStyle(fontFamily: 'Space Mono'),
               ),
               const SizedBox(height: 16),
 
-              // Tanggal dan Waktu
               Row(
                 children: [
                   Expanded(
@@ -336,7 +299,6 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
                             border: OutlineInputBorder(),
                             suffixIcon: Icon(Icons.calendar_today),
                           ),
-                          style: const TextStyle(fontFamily: 'Space Mono'),
                         ),
                       ),
                     ),
@@ -357,7 +319,6 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
                             border: OutlineInputBorder(),
                             suffixIcon: Icon(Icons.access_time),
                           ),
-                          style: const TextStyle(fontFamily: 'Space Mono'),
                         ),
                       ),
                     ),
@@ -366,31 +327,29 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
               ),
               const SizedBox(height: 16),
 
-              // Jumlah
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Jumlah',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   prefixText: 'Rp ',
-                  suffixIcon: Icon(Icons.calculate),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calculate),
+                    onPressed: _openCalculator,
+                  ),
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.isEmpty)
                     return 'Jumlah tidak boleh kosong';
-                  }
                   if (double.tryParse(value) == null ||
-                      double.parse(value) <= 0) {
+                      double.parse(value) <= 0)
                     return 'Jumlah harus angka positif';
-                  }
                   return null;
                 },
-                style: const TextStyle(fontFamily: 'Space Mono'),
               ),
               const SizedBox(height: 16),
 
-              // Kategori
               TextFormField(
                 controller: _categoryController,
                 decoration: const InputDecoration(
@@ -398,15 +357,13 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.isEmpty)
                     return 'Kategori tidak boleh kosong';
-                  }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
 
-              // Keterangan (Notes)
               TextFormField(
                 controller: _notesController,
                 decoration: const InputDecoration(
@@ -417,7 +374,6 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
               ),
               const SizedBox(height: 24),
 
-              // Tombol Simpan
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
