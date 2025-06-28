@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_application_1/models/transaction_model.dart';
-import 'halamanutama.dart';
+import 'package:flutter_application_1/backend/database_service.dart'; // BARU
 import '/widgets/kalkulator.dart';
 
 class AddEditTransactionPage extends StatefulWidget {
@@ -34,25 +34,16 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
   late TransactionType _currentTransactionType;
 
   final Uuid _uuid = const Uuid();
+  final DatabaseService _dbService = DatabaseService(); // BARU
 
   @override
   void initState() {
     super.initState();
-    _currentTransactionType = widget.transactionType;
-
-    _titleController = TextEditingController(
-      text: widget.transaction?.title ?? '',
-    );
-    _amountController = TextEditingController(
-      text: widget.transaction?.amount.toString() ?? '',
-    );
-    _categoryController = TextEditingController(
-      text: widget.transaction?.subtitle ?? '',
-    );
-    _notesController = TextEditingController(
-      text: widget.transaction?.notes ?? '',
-    );
-
+    _currentTransactionType = widget.transaction?.type ?? widget.transactionType;
+    _titleController = TextEditingController(text: widget.transaction?.title ?? '');
+    _amountController = TextEditingController(text: widget.transaction?.amount.toString() ?? '');
+    _categoryController = TextEditingController(text: widget.transaction?.subtitle ?? '');
+    _notesController = TextEditingController(text: widget.transaction?.notes ?? '');
     _selectedDate = widget.transaction?.date ?? widget.initialDate;
     _selectedTime = widget.transaction?.time ?? TimeOfDay.now();
   }
@@ -93,19 +84,16 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
     }
   }
 
+  // UBAH: Fungsi ini sekarang menyimpan ke Firestore
   void _saveTransaction() {
     if (_formKey.currentState!.validate()) {
       final String id = widget.transaction?.id ?? _uuid.v4();
       final String title = _titleController.text;
       final double amount = double.tryParse(_amountController.text) ?? 0.0;
-      final String category =
-          _categoryController.text.isEmpty
-              ? (_currentTransactionType == TransactionType.income
-                  ? 'Umum'
-                  : 'Lain-lain')
-              : _categoryController.text;
-      final String? notes =
-          _notesController.text.isEmpty ? null : _notesController.text;
+      final String category = _categoryController.text.isEmpty
+          ? (_currentTransactionType == TransactionType.income ? 'Umum' : 'Lain-lain')
+          : _categoryController.text;
+      final String? notes = _notesController.text.isEmpty ? null : _notesController.text;
 
       final newTransaction = Transaction(
         id: id,
@@ -118,19 +106,21 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
         notes: notes,
       );
 
-      Navigator.of(context).pop(newTransaction);
+      // Kirim data ke service, lalu tutup halaman
+      _dbService.saveTransaction(newTransaction).then((_) {
+        Navigator.of(context).pop();
+      });
     }
   }
 
+  // UBAH: Fungsi ini sekarang menghapus dari Firestore
   Future<void> _deleteTransaction() async {
     final bool? confirmDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Hapus Transaksi?'),
-          content: Text(
-            'Anda yakin ingin menghapus transaksi "${widget.transaction?.title}" ini?',
-          ),
+          content: Text('Anda yakin ingin menghapus transaksi "${widget.transaction?.title}" ini?'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -147,7 +137,10 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
 
     if (!mounted) return;
     if (confirmDelete == true) {
-      Navigator.of(context).pop(widget.transaction?.id);
+      // Kirim perintah hapus ke service, lalu tutup halaman
+      _dbService.deleteTransaction(widget.transaction!.id).then((_) {
+        Navigator.of(context).pop();
+      });
     }
   }
 
@@ -155,17 +148,17 @@ class _AddEditTransactionPageState extends State<AddEditTransactionPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => CustomCalculator(
-              onSubmit: (value) {
-                setState(() {
-                  _amountController.text = value;
-                });
-              },
-            ),
+        builder: (context) => CustomCalculator(
+          onSubmit: (value) {
+            setState(() {
+              _amountController.text = value;
+            });
+          },
+        ),
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
