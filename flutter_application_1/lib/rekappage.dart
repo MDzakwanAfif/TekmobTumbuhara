@@ -1,10 +1,13 @@
+// lib/rekappage.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_application_1/halamanutama.dart';
 import 'package:flutter_application_1/hutangpage.dart';
 import 'package:flutter_application_1/settingpage.dart';
 import 'package:flutter_application_1/models/transaction_model.dart';
 import 'package:flutter_application_1/backend/database_service.dart';
+import 'package:flutter_application_1/theme_provider.dart';
 
 class RekapPage extends StatefulWidget {
   final bool isLoggedIn;
@@ -25,11 +28,22 @@ class _RekapPageState extends State<RekapPage> {
   DateTime _endDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
 
   Future<void> _selectDateRange() async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: themeProvider.mainColor,
+            colorScheme: ColorScheme.light(primary: themeProvider.mainColor),
+            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -57,11 +71,7 @@ class _RekapPageState extends State<RekapPage> {
       }
     }
 
-    return {
-      'pemasukan': totalMasuk,
-      'pengeluaran': totalKeluar,
-      'sisa': totalMasuk - totalKeluar,
-    };
+    return {'pemasukan': totalMasuk, 'pengeluaran': totalKeluar, 'sisa': totalMasuk - totalKeluar};
   }
 
   void _onItemTapped(int index) {
@@ -89,10 +99,12 @@ class _RekapPageState extends State<RekapPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFF9800),
+        backgroundColor: themeProvider.mainColor,
         elevation: 0,
         title: const Text('Rekap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -109,13 +121,13 @@ class _RekapPageState extends State<RekapPage> {
             return const Center(child: Text('Gagal memuat data rekap'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return _buildRecapContent(null); // Kirim null jika tidak ada data
+            return _buildRecapContent(null, themeProvider.mainColor);
           }
 
           final allTransactions = snapshot.data!;
           final rekapData = _hitungRekap(allTransactions);
 
-          return _buildRecapContent(rekapData);
+          return _buildRecapContent(rekapData, themeProvider.mainColor);
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -126,18 +138,17 @@ class _RekapPageState extends State<RekapPage> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Pengaturan'),
         ],
         currentIndex: widget.initialTabIndex,
-        selectedItemColor: const Color(0xFFFF9800),
+        selectedItemColor: themeProvider.mainColor,
         unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped, // Menggunakan fungsi navigasi yang sudah dibuat
+        onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
       ),
     );
   }
 
-  Widget _buildRecapContent(Map<String, double>? rekapData) {
+  Widget _buildRecapContent(Map<String, double>? rekapData, Color mainColor) {
     if (rekapData == null) {
-      // Tampilan jika tidak ada data sama sekali
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -146,7 +157,7 @@ class _RekapPageState extends State<RekapPage> {
               onPressed: _selectDateRange,
               icon: const Icon(Icons.calendar_today),
               label: const Text('Pilih Rentang Tanggal'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              style: ElevatedButton.styleFrom(backgroundColor: mainColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
             ),
             const SizedBox(height: 20),
             const Text('Tidak ada data transaksi untuk direkap.'),
@@ -172,7 +183,7 @@ class _RekapPageState extends State<RekapPage> {
             onPressed: _selectDateRange,
             icon: const Icon(Icons.calendar_today),
             label: const Text('Pilih Rentang Tanggal'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            style: ElevatedButton.styleFrom(backgroundColor: mainColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
           ),
           const SizedBox(height: 10),
           Text(

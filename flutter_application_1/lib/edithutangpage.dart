@@ -1,69 +1,22 @@
-// lib/add_edit_hutang_page.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '/widgets/kalkulator.dart'; // kalkulator kustom
-
-// Enum dan Model DebtTransaction (pastikan ini ada di satu lokasi yang diimpor)
-enum DebtTransactionType { giving, receiving }
-
-class DebtTransaction {
-  final String id;
-  final DebtTransactionType type;
-  final double amount;
-  final String personName;
-  final String? notes;
-  final DateTime date;
-  final TimeOfDay time;
-
-  DebtTransaction({
-    required this.id,
-    required this.type,
-    required this.amount,
-    required this.personName,
-    this.notes,
-    required this.date,
-    required this.time,
-  });
-
-  DateTime get fullDateTime =>
-      DateTime(date.year, date.month, date.day, time.hour, time.minute);
-
-  DebtTransaction copyWith({
-    String? id,
-    DebtTransactionType? type,
-    double? amount,
-    String? personName,
-    String? notes,
-    DateTime? date,
-    TimeOfDay? time,
-  }) {
-    return DebtTransaction(
-      id: id ?? this.id,
-      type: type ?? this.type,
-      amount: amount ?? this.amount,
-      personName: personName ?? this.personName,
-      notes: notes ?? this.notes,
-      date: date ?? this.date,
-      time: time ?? this.time,
-    );
-  }
-}
+import 'package:flutter_application_1/models/debt_transaction_model.dart';
+import 'package:flutter_application_1/backend/database_service.dart';
+import 'package:flutter_application_1/theme_provider.dart';
+import '/widgets/kalkulator.dart';
 
 class AddEditHutangPage extends StatefulWidget {
   final DebtTransactionType transactionType;
   final DebtTransaction? transaction;
   final DateTime initialDate;
-  final int initialTabIndex;
-  final bool isLoggedIn;
 
   const AddEditHutangPage({
     super.key,
     required this.transactionType,
     this.transaction,
     required this.initialDate,
-    this.initialTabIndex = 2,
-    required this.isLoggedIn,
   });
 
   @override
@@ -77,24 +30,22 @@ class _AddEditHutangPageState extends State<AddEditHutangPage> {
   late TextEditingController _notesController;
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
+  late bool _isPaid;
+  late DebtTransactionType _currentType;
 
   final Uuid _uuid = const Uuid();
+  final DatabaseService _dbService = DatabaseService();
 
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(
-      text: widget.transaction?.amount.toString() ?? '',
-    );
-    _nameController = TextEditingController(
-      text: widget.transaction?.personName ?? '',
-    );
-    _notesController = TextEditingController(
-      text: widget.transaction?.notes ?? '',
-    );
-
+    _amountController = TextEditingController(text: widget.transaction?.amount.toString() ?? '');
+    _nameController = TextEditingController(text: widget.transaction?.personName ?? '');
+    _notesController = TextEditingController(text: widget.transaction?.notes ?? '');
     _selectedDate = widget.transaction?.date ?? widget.initialDate;
     _selectedTime = widget.transaction?.time ?? TimeOfDay.now();
+    _isPaid = widget.transaction?.isPaid ?? false;
+    _currentType = widget.transaction?.type ?? widget.transactionType;
   }
 
   @override
@@ -106,6 +57,7 @@ class _AddEditHutangPageState extends State<AddEditHutangPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -115,117 +67,107 @@ class _AddEditHutangPageState extends State<AddEditHutangPage> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFFFF9800),
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF9800),
-              ),
-            ),
+            primaryColor: themeProvider.mainColor,
+            colorScheme: ColorScheme.light(primary: themeProvider.mainColor),
+            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
           ),
           child: child!,
         );
       },
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
     }
   }
 
   Future<void> _selectTime(BuildContext context) async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFFFF9800),
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF9800),
-              ),
-            ),
+            primaryColor: themeProvider.mainColor,
+            colorScheme: ColorScheme.light(primary: themeProvider.mainColor),
+            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
           ),
           child: child!,
         );
       },
     );
-    if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
+    if (picked != null) {
+      setState(() => _selectedTime = picked);
     }
   }
 
-  void _showCalculator() async {
-    await Navigator.push(
+  // --- BAGIAN YANG DIPERBAIKI ---
+  void _showCalculator() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => CustomCalculator(
-              onSubmit: (result) {
-                setState(() {
-                  _amountController.text = result;
-                });
-              },
-            ),
+        builder: (context) => CustomCalculator(
+          themeColor: themeProvider.mainColor, // <-- Kirim warna tema
+          onSubmit: (value) {
+            setState(() {
+              _amountController.text = value;
+            });
+          },
+        ),
       ),
     );
   }
 
   void _saveDebtTransaction() {
     if (_formKey.currentState!.validate()) {
-      final String id = widget.transaction?.id ?? _uuid.v4();
-      final double amount = double.tryParse(_amountController.text) ?? 0.0;
-      final String personName = _nameController.text;
-      final String? notes =
-          _notesController.text.isEmpty ? null : _notesController.text;
-
       final newDebtTransaction = DebtTransaction(
-        id: id,
-        type: widget.transactionType,
-        amount: amount,
-        personName: personName,
-        notes: notes,
+        id: widget.transaction?.id ?? _uuid.v4(),
+        type: _currentType,
+        amount: double.tryParse(_amountController.text) ?? 0.0,
+        personName: _nameController.text,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
         date: _selectedDate,
         time: _selectedTime,
+        isPaid: _isPaid,
       );
 
-      Navigator.of(context).pop(newDebtTransaction);
+      _dbService.saveDebtTransaction(newDebtTransaction).then((_) => Navigator.of(context).pop());
     }
   }
 
+  Future<void> _deleteDebtTransaction() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Transaksi Hutang?'),
+        content: const Text('Anda yakin ingin menghapus transaksi ini?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Hapus', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      if (!mounted) return;
+      _dbService.deleteDebtTransaction(widget.transaction!.id).then((_) => Navigator.of(context).pop());
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    String appBarTitle =
-        widget.transactionType == DebtTransactionType.giving
-            ? 'Memberi'
-            : 'Menerima';
-
-    if (widget.transaction != null) {
-      appBarTitle = 'Edit $appBarTitle';
-    }
-
-    final String formattedDate = DateFormat(
-      'EEE, dd MMM yyyy',
-      'id_ID',
-    ).format(_selectedDate);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final bool isEditing = widget.transaction != null;
+    String appBarTitle = isEditing ? 'Edit Hutang' : 'Tambah Hutang';
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFF9800),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         title: Text(appBarTitle),
-        centerTitle: true,
+        backgroundColor: themeProvider.mainColor,
+        foregroundColor: Colors.white,
+        actions: [if (isEditing) IconButton(icon: const Icon(Icons.delete), onPressed: _deleteDebtTransaction)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -234,113 +176,77 @@ class _AddEditHutangPageState extends State<AddEditHutangPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: GestureDetector(
-                      onTap: () => _selectDate(context),
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          readOnly: true,
-                          controller: TextEditingController(
-                            text: formattedDate,
-                          ),
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
-                          ),
-                          style: const TextStyle(fontFamily: 'Space Mono'),
-                        ),
-                      ),
-                    ),
+              Row(children: [
+                Expanded(child: GestureDetector(
+                  onTap: () => setState(() => _currentType = DebtTransactionType.giving),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: _currentType == DebtTransactionType.giving ? themeProvider.mainColor : Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                    child: Center(child: Text('Memberi Utang', style: TextStyle(color: _currentType == DebtTransactionType.giving ? Colors.white : Colors.black, fontWeight: FontWeight.bold))),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: GestureDetector(
-                      onTap: () => _selectTime(context),
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          readOnly: true,
-                          controller: TextEditingController(
-                            text: _selectedTime.format(context),
-                          ),
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.access_time),
-                          ),
-                          style: const TextStyle(fontFamily: 'Space Mono'),
-                        ),
-                      ),
-                    ),
+                )),
+                const SizedBox(width: 8),
+                Expanded(child: GestureDetector(
+                  onTap: () => setState(() => _currentType = DebtTransactionType.receiving),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: _currentType == DebtTransactionType.receiving ? themeProvider.mainColor : Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                    child: Center(child: Text('Menerima Utang', style: TextStyle(color: _currentType == DebtTransactionType.receiving ? Colors.white : Colors.black, fontWeight: FontWeight.bold))),
                   ),
-                ],
-              ),
+                )),
+              ]),
+              const SizedBox(height: 20),
+              Row(children: [
+                Expanded(flex: 3, child: GestureDetector(
+                  onTap: () => _selectDate(context),
+                  child: AbsorbPointer(child: TextFormField(
+                    readOnly: true,
+                    controller: TextEditingController(text: DateFormat('EEE, dd MMM indeterminate', 'id_ID').format(_selectedDate)),
+                    decoration: const InputDecoration(labelText: 'Tanggal', border: OutlineInputBorder(), suffixIcon: Icon(Icons.calendar_today)),
+                  )),
+                )),
+                const SizedBox(width: 10),
+                Expanded(flex: 2, child: GestureDetector(
+                  onTap: () => _selectTime(context),
+                  child: AbsorbPointer(child: TextFormField(
+                    readOnly: true,
+                    controller: TextEditingController(text: _selectedTime.format(context)),
+                    decoration: const InputDecoration(labelText: 'Waktu', border: OutlineInputBorder(), suffixIcon: Icon(Icons.access_time)),
+                  )),
+                )),
+              ]),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Jumlah',
-                  border: const OutlineInputBorder(),
-                  prefixText: 'Rp ',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calculate),
-                    onPressed: _showCalculator,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Jumlah tidak boleh kosong';
-                  }
-                  if (double.tryParse(value) == null ||
-                      double.parse(value) <= 0) {
-                    return 'Jumlah harus angka positif';
-                  }
-                  return null;
-                },
+                decoration: InputDecoration(labelText: 'Jumlah', border: const OutlineInputBorder(), prefixText: 'Rp ', suffixIcon: IconButton(icon: const Icon(Icons.calculate), onPressed: _showCalculator)),
+                validator: (v) => (v == null || v.isEmpty || double.tryParse(v) == null || double.parse(v) <= 0) ? 'Jumlah harus angka positif' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Masukkan nama',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Nama tidak boleh kosong';
-                  }
-                  return null;
-                },
+                decoration: InputDecoration(labelText: _currentType == DebtTransactionType.giving ? 'Nama Penerima Utang' : 'Nama Pemberi Utang', border: const OutlineInputBorder()),
+                validator: (v) => (v == null || v.isEmpty) ? 'Nama tidak boleh kosong' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Keterangan (tidak wajib diisi)',
-                  border: OutlineInputBorder(),
-                ),
+              TextFormField(controller: _notesController, maxLines: 3, decoration: const InputDecoration(labelText: 'Keterangan (opsional)', border: OutlineInputBorder())),
+              SwitchListTile(
+                title: const Text('Tandai Sudah Lunas'),
+                value: _isPaid,
+                onChanged: (value) => setState(() => _isPaid = value),
+                activeColor: themeProvider.mainColor,
               ),
               const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
+              SizedBox(
+                width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _saveDebtTransaction,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    backgroundColor: themeProvider.mainColor,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Simpan'),
+                  child: Text(isEditing ? 'Simpan Perubahan' : 'Tambah Hutang', style: const TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
             ],
