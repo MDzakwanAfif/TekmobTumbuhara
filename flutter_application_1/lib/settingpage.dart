@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_application_1/halamanutama.dart';
 import 'package:flutter_application_1/rekappage.dart';
 import 'package:flutter_application_1/hutangpage.dart';
@@ -143,7 +144,11 @@ class _SettingsPageState extends State<SettingsPage> {
             leading: Icon(Icons.thumb_up, color: themeProvider.mainColor),
             title: const Text("Rekomendasikan ke teman"),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () {
+              final String appLink = "https://play.google.com/store/apps/details?id=com.example.flutter_application_1";
+              final String message = "Coba aplikasi TumbuHara! Aplikasi keren untuk mencatat keuanganmu. Unduh di sini: $appLink";
+              Share.share(message, subject: 'Rekomendasi Aplikasi TumbuHara');
+            },
           ),
           const SizedBox(height: 20),
           const Text("Pilih Tema Warna:"),

@@ -12,28 +12,28 @@ class DatabaseService {
   // Mendapatkan stream transaksi untuk tampilan real-time
   Stream<List<Transaction>> getTransactions() {
     if (_user == null) return Stream.value([]);
-    var ref = _db.collection('users').doc(_user!.uid).collection('transactions').orderBy('date', descending: true);
+    var ref = _db.collection('users').doc(_user.uid).collection('transactions').orderBy('date', descending: true);
     return ref.snapshots().map((snapshot) => snapshot.docs.map((doc) => Transaction.fromMap(doc.data())).toList());
   }
 
   // Menyimpan (menambah/mengedit) transaksi
   Future<void> saveTransaction(Transaction transaction) {
     if (_user == null) return Future.value();
-    var ref = _db.collection('users').doc(_user!.uid).collection('transactions').doc(transaction.id);
+    var ref = _db.collection('users').doc(_user.uid).collection('transactions').doc(transaction.id);
     return ref.set(transaction.toMap());
   }
 
   // Menghapus transaksi
   Future<void> deleteTransaction(String transactionId) {
     if (_user == null) return Future.value();
-    var ref = _db.collection('users').doc(_user!.uid).collection('transactions').doc(transactionId);
+    var ref = _db.collection('users').doc(_user.uid).collection('transactions').doc(transactionId);
     return ref.delete();
   }
 
   
   Future<List<Transaction>> getAllTransactions() async {
     if (_user == null) return [];
-    var ref = _db.collection('users').doc(_user!.uid).collection('transactions');
+    var ref = _db.collection('users').doc(_user.uid).collection('transactions');
     var snapshot = await ref.get();
     return snapshot.docs.map((doc) => Transaction.fromMap(doc.data())).toList();
   }
@@ -44,7 +44,7 @@ class DatabaseService {
     if (_user == null) return Stream.value([]);
     var ref = _db
         .collection('users')
-        .doc(_user!.uid)
+        .doc(_user.uid)
         .collection('debts') // Koleksi baru untuk hutang
         .orderBy('date', descending: true);
     return ref.snapshots().map((snapshot) =>
@@ -55,7 +55,7 @@ class DatabaseService {
   Future<void> saveDebtTransaction(DebtTransaction debt) {
     if (_user == null) return Future.value();
     var ref =
-        _db.collection('users').doc(_user!.uid).collection('debts').doc(debt.id);
+        _db.collection('users').doc(_user.uid).collection('debts').doc(debt.id);
     return ref.set(debt.toMap());
   }
 
@@ -63,14 +63,14 @@ class DatabaseService {
   Future<void> deleteDebtTransaction(String debtId) {
     if (_user == null) return Future.value();
     var ref =
-        _db.collection('users').doc(_user!.uid).collection('debts').doc(debtId);
+        _db.collection('users').doc(_user.uid).collection('debts').doc(debtId);
     return ref.delete();
   }
 
   Future<void> deleteAllUserData() async {
     if (_user == null) return;
 
-    final userRef = _db.collection('users').doc(_user!.uid);
+    final userRef = _db.collection('users').doc(_user.uid);
 
     // Ambil referensi koleksi transaksi dan hutang
     final transactionsCollection = userRef.collection('transactions');
@@ -95,4 +95,3 @@ class DatabaseService {
     await batch.commit();
   }
 }
-
